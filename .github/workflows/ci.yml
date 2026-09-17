@@ -63,5 +63,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kinopoisk-${{ matrix.jellyfin }}
-          path: jellyfin-plugin-kinopoisk_v${{ matrix.jellyfin }}.zip
+          path: jellyfin-plugin-kinopoisk_v${{ env.PLUGIN_VERSION }}.zip
           if-no-files-found: error
