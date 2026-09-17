@@ -5,11 +5,10 @@
     <DebugType>portable</DebugType>
     <Nullable>enable</Nullable>
 
+    <!-- Jellyfin compatibility is independent from the plugin release version. -->
     <!-- Override with -p:JellyfinVersion=12.0.0 for the Jellyfin 12.0 build. -->
     <JellyfinVersion Condition="'$(JellyfinVersion)' == ''">12.1.0</JellyfinVersion>
-    <PluginVersion Condition="'$(JellyfinVersion)' == '12.0.0'">12.0.0.0</PluginVersion>
-    <PluginVersion Condition="'$(JellyfinVersion)' == '12.1.0'">12.1.0.0</PluginVersion>
-    <PluginVersion Condition="'$(PluginVersion)' == ''">12.1.0.0</PluginVersion>
+    <PluginVersion>13.0.0.0</PluginVersion>
     <Version>$(PluginVersion)</Version>
     <AssemblyVersion>$(PluginVersion)</AssemblyVersion>
     <FileVersion>$(PluginVersion)</FileVersion>
