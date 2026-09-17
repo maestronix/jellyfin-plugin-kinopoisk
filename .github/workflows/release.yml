@@ -110,47 +110,44 @@ jobs:
             "releases/12.1.0/jellyfin-plugin-kinopoisk_v${PLUGIN_VERSION}_jf12.1.0.zip" \
             --clobber
 
-      - name: Replace repository manifest with current release only
+      - name: Append release to repository manifest
         run: |
           set -euo pipefail
           CHECKSUM_120=$(cat "releases/12.0.0/jellyfin-plugin-kinopoisk_v${PLUGIN_VERSION}_jf12.0.0.zip.md5")
           CHECKSUM_121=$(cat "releases/12.1.0/jellyfin-plugin-kinopoisk_v${PLUGIN_VERSION}_jf12.1.0.zip.md5")
           TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
 
-          jq -n \
+          jq \
             --arg version "$PLUGIN_VERSION" \
             --arg checksum120 "$CHECKSUM_120" \
             --arg checksum121 "$CHECKSUM_121" \
             --arg timestamp "$TIMESTAMP" \
-            --arg owner "maestronix" \
-            --arg imageUrl "https://kinopoisk.userecho.com/s/attachments/28876/0/1/25f8c0315e6ccb2aa6c2642e48f2c9e9.png" \
-            '[{
-              category: "Metadata",
-              guid: "33e6d249-648f-44cd-a9ce-497be06c08df",
-              name: "КиноПоиск",
-              overview: "Информация о фильмах и сериалах с КиноПоиска",
-              owner: $owner,
-              description: "Lädt Bewertungen, Beschreibungen, Schauspieler, Trailer sowie Staffel- und Folgen-Metadaten von КиноПоиск. Für eine genaue Zuordnung kann die Kinopoisk-ID im Datei- oder Ordnernamen als kp-12345 oder kp12345 angegeben werden.",
-              imageUrl: $imageUrl,
-              versions: [
-                {
-                  version: $version,
-                  changelog: "Jellyfin 12.0 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
-                  targetAbi: "12.0.0.0",
-                  sourceUrl: ("https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v" + $version + "/jellyfin-plugin-kinopoisk_v" + $version + "_jf12.0.0.zip"),
-                  checksum: $checksum120,
-                  timestamp: $timestamp
-                },
-                {
-                  version: $version,
-                  changelog: "Jellyfin 12.1 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
-                  targetAbi: "12.1.0.0",
-                  sourceUrl: ("https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v" + $version + "/jellyfin-plugin-kinopoisk_v" + $version + "_jf12.1.0.zip"),
-                  checksum: $checksum121,
-                  timestamp: $timestamp
-                }
-              ]
-            }]' > manifest.json
+            '.[0]
+             | .versions = (
+                 [.versions[] | select(.version != $version or .targetAbi != "12.0.0.0")]
+                 + [{
+                     version: $version,
+                     changelog: "Jellyfin 12.0 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
+                     targetAbi: "12.0.0.0",
+                     sourceUrl: ("https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v" + $version + "/jellyfin-plugin-kinopoisk_v" + $version + "_jf12.0.0.zip"),
+                     checksum: $checksum120,
+                     timestamp: $timestamp
+                   }]
+                 )
+             | .versions = (
+                 [.versions[] | select(.version != $version or .targetAbi != "12.1.0.0")]
+                 + [{
+                     version: $version,
+                     changelog: "Jellyfin 12.1 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
+                     targetAbi: "12.1.0.0",
+                     sourceUrl: ("https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v" + $version + "/jellyfin-plugin-kinopoisk_v" + $version + "_jf12.1.0.zip"),
+                     checksum: $checksum121,
+                     timestamp: $timestamp
+                   }]
+                 )
+             | [.]
+            ' manifest.json > manifest.json.tmp
+          mv manifest.json.tmp manifest.json
 
       - name: Commit manifest
         run: |
