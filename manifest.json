@@ -7,6 +7,23 @@
     "owner": "maestronix",
     "description": "Загружает рейтинг, описания, актёров, трейлеры и другие метаданные с КиноПоиска. Для точного распознавания рекомендуется указывать id фильма в имени файла или папки в формате kp-12345 или kp12345.",
     "imageUrl": "https://kinopoisk.userecho.com/s/attachments/28876/0/1/25f8c0315e6ccb2aa6c2642e48f2c9e9.png",
-    "versions": []
+    "versions": [
+      {
+        "version": "12.1.0.0",
+        "changelog": "Jellyfin 12.1.0 compatibility build; .NET 10.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v12.1.0.0/jellyfin-plugin-kinopoisk_v12.1.0.0.zip",
+        "checksum": "0C7010C9D25133A77F70D7942CD62184",
+        "timestamp": "2026-09-17T11:18:30Z"
+      },
+      {
+        "version": "12.0.0.0",
+        "changelog": "Jellyfin 12.0.0 compatibility build; .NET 10.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v12.0.0.0/jellyfin-plugin-kinopoisk_v12.0.0.0.zip",
+        "checksum": "73650E30C3EE26FB6CF879E32C0D06B8",
+        "timestamp": "2026-09-17T11:18:30Z"
+      }
+    ]
   }
 ]
