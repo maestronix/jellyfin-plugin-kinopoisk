@@ -5,9 +5,25 @@
     "name": "КиноПоиск",
     "overview": "Информация о фильмах и сериалах с КиноПоиска",
     "owner": "maestronix",
-    "description": "Lädt Bewertungen, Beschreibungen, Schauspieler, Trailer sowie Staffel- und Folgen-Metadaten von КиноПоиск. Für eine genaue Zuordnung kann die Kinopoisk-ID im Datei- oder Ordnernamen als kp-12345 oder kp12345 angegeben werden.",
+    "description": "Загружает рейтинг, описания, актёров, трейлеры und Staffeln/Folgen-Metadaten с КиноПоиска. Für точного распознавания рекомендуется указывать id фильма в имени файла или папки в формате kp-12345 или kp12345.",
     "imageUrl": "https://kinopoisk.userecho.com/s/attachments/28876/0/1/25f8c0315e6ccb2aa6c2642e48f2c9e9.png",
     "versions": [
+      {
+        "version": "13.0.0.0",
+        "changelog": "Jellyfin 12.0 compatibility; fixed Jellyfin 12 provider discovery and Identify handling; .NET 10.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v13.0.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.0.0.zip",
+        "checksum": "AAD862EFF385EBF0F6C17AA2637AC966",
+        "timestamp": "2026-09-17T13:28:57Z"
+      },
+      {
+        "version": "13.0.0.0",
+        "changelog": "Jellyfin 12.1 compatibility; fixed Jellyfin 12 provider discovery and Identify handling; .NET 10.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v13.0.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.1.0.zip",
+        "checksum": "D2AC680999E251A48F38CECC008F1E03",
+        "timestamp": "2026-09-17T13:28:57Z"
+      },
       {
         "version": "13.0.1.0",
         "changelog": "Jellyfin 12.0 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
