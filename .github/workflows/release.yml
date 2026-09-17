@@ -130,7 +130,7 @@ jobs:
               name: "КиноПоиск",
               overview: "Информация о фильмах и сериалах с КиноПоиска",
               owner: $owner,
-              description: "Загружает рейтинг, описания, актёров, трейлеры und Staffeln/Folgen-Metadaten с КиноПоиска. Für точного распознавания рекомендуется указывать id фильма в имени файла или папки в формате kp-12345 или kp12345.",
+              description: "Lädt Bewertungen, Beschreibungen, Schauspieler, Trailer sowie Staffel- und Folgen-Metadaten von КиноПоиск. Für eine genaue Zuordnung kann die Kinopoisk-ID im Datei- oder Ordnernamen als kp-12345 oder kp12345 angegeben werden.",
               imageUrl: $imageUrl,
               versions: [
                 {
