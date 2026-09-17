@@ -29,16 +29,16 @@
         "changelog": "Jellyfin 12.0 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
         "targetAbi": "12.0.0.0",
         "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v13.0.1.0/jellyfin-plugin-kinopoisk_v13.0.1.0_jf12.0.0.zip",
-        "checksum": "4459663A7ACBA50D8EBABCDAB8F4E804",
-        "timestamp": "2026-09-17T17:29:39Z"
+        "checksum": "972242F7AFF83C7C0AE2B913746F341C",
+        "timestamp": "2026-09-17T17:34:18Z"
       },
       {
         "version": "13.0.1.0",
         "changelog": "Jellyfin 12.1 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v13.0.1.0/jellyfin-plugin-kinopoisk_v13.0.1.0_jf12.1.0.zip",
-        "checksum": "3F971D929BF26F3157EF5316113708CC",
-        "timestamp": "2026-09-17T17:29:39Z"
+        "checksum": "FA0F016F91C1EAA87E47D1506AFB74DA",
+        "timestamp": "2026-09-17T17:34:18Z"
       }
     ]
   }
