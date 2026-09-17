@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using KinopoiskUnofficialInfo.ApiClient;
@@ -15,20 +16,20 @@ namespace Jellyfin.Plugin.Kinopoisk.MetadataProviders
     /// <summary>
     /// Provides episode metadata from the Kinopoisk series seasons endpoint.
     /// </summary>
-    public sealed class EpisodeMetadataProvider : IRemoteMetadataProvider<MediaBrowser.Controller.Entities.TV.Episode, EpisodeInfo>
+    public sealed class EpisodeMetadataProvider : BaseMetadataProvider, IRemoteMetadataProvider<MediaBrowser.Controller.Entities.TV.Episode, EpisodeInfo>
     {
         private readonly IKinopoiskApiClient _apiClient;
         private readonly ILogger<EpisodeMetadataProvider> _logger;
 
         public EpisodeMetadataProvider(
             IKinopoiskApiClient apiClient,
-            ILogger<EpisodeMetadataProvider> logger)
+            ILogger<EpisodeMetadataProvider> logger,
+            IHttpClientFactory httpClientFactory)
+            : base(httpClientFactory)
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
-        public string Name => Constants.ProviderName;
 
         public async Task<MetadataResult<MediaBrowser.Controller.Entities.TV.Episode>> GetMetadata(EpisodeInfo info, CancellationToken cancellationToken)
         {
