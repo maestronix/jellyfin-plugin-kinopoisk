@@ -32,8 +32,8 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore src/Jellyfin.Plugin.Kinopoisk.sln -p:JellyfinVersion=${{ matrix.jellyfin }}
 
-      - name: Build plugin
-        run: dotnet build src/Jellyfin.Plugin.Kinopoisk/Jellyfin.Plugin.Kinopoisk.csproj --configuration Release --no-restore -p:JellyfinVersion=${{ matrix.jellyfin }}
+      - name: Build solution
+        run: dotnet build src/Jellyfin.Plugin.Kinopoisk.sln --configuration Release --no-restore -p:JellyfinVersion=${{ matrix.jellyfin }}
 
       - name: Run tests
         run: dotnet test src/Jellyfin.Plugin.Kinopoisk.Tests/Jellyfin.Plugin.Kinopoisk.Tests.csproj --configuration Release --no-build -p:JellyfinVersion=${{ matrix.jellyfin }}
