@@ -1,4 +1,4 @@
-name: Build and Release Jellyfin 12 Plugin
+name: Build and Release Kinopoisk Plugin
 
 on:
   push:
@@ -40,9 +40,10 @@ jobs:
 
       - name: Package plugin
         run: |
-          VERSION="${{ matrix.jellyfin }}.0"
+          set -euo pipefail
+          VERSION="13.0.0.0"
           TARGET_ABI="${{ matrix.jellyfin }}.0"
-          ZIP="jellyfin-plugin-kinopoisk_v${VERSION}.zip"
+          ZIP="jellyfin-plugin-kinopoisk_v${VERSION}_jf${{ matrix.jellyfin }}.zip"
 
           mkdir -p release_package
           cp "src/Jellyfin.Plugin.Kinopoisk/bin/Release/net10.0/Jellyfin.Plugin.Kinopoisk.dll" release_package/
@@ -59,12 +60,12 @@ jobs:
         with:
           name: release-${{ matrix.jellyfin }}
           path: |
-            jellyfin-plugin-kinopoisk_v${{ matrix.jellyfin }}.0.zip
-            jellyfin-plugin-kinopoisk_v${{ matrix.jellyfin }}.0.zip.md5
+            jellyfin-plugin-kinopoisk_v13.0.0.0_jf${{ matrix.jellyfin }}.zip
+            jellyfin-plugin-kinopoisk_v13.0.0.0_jf${{ matrix.jellyfin }}.zip.md5
           if-no-files-found: error
 
   publish:
-    name: Publish releases and repository manifest
+    name: Publish release and repository manifest
     needs: build
     runs-on: ubuntu-latest
 
@@ -86,64 +87,67 @@ jobs:
           name: release-12.1.0
           path: releases/12.1.0
 
-      - name: Create GitHub releases
+      - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for JF in 12.0.0 12.1.0; do
-            VERSION="${JF}.0"
-            ZIP="jellyfin-plugin-kinopoisk_v${VERSION}.zip"
-            TAG="v${VERSION}"
+          TAG="v13.0.0.0"
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" \
+              --title "КиноПоиск 13.0.0.0" \
+              --notes "Jellyfin 12.0 and 12.1 compatibility build. Plugin versioning is independent from the Jellyfin ABI version."
 
-            gh release view "$TAG" >/dev/null 2>&1 || \
-              gh release create "$TAG" \
-                --title "КиноПоиск Jellyfin ${VERSION}" \
-                --notes "Jellyfin ${JF} compatible build of the Kinopoisk metadata plugin."
+          gh release upload "$TAG" \
+            releases/12.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.0.0.zip \
+            releases/12.1.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.1.0.zip \
+            --clobber
 
-            gh release upload "$TAG" \
-              "releases/${JF}/${ZIP}" \
-              --clobber
-          done
-
-      - name: Update repository manifest
+      - name: Replace repository manifest with current release only
         run: |
           set -euo pipefail
-          cp manifest.json manifest.tmp
+          CHECKSUM_120=$(cat releases/12.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.0.0.zip.md5)
+          CHECKSUM_121=$(cat releases/12.1.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.1.0.zip.md5)
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
 
-          for JF in 12.0.0 12.1.0; do
-            VERSION="${JF}.0"
-            TARGET_ABI="${JF}.0"
-            ZIP="jellyfin-plugin-kinopoisk_v${VERSION}.zip"
-            CHECKSUM=$(cat "releases/${JF}/${ZIP}.md5")
-            SOURCE_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${ZIP}"
-            TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-
-            jq \
-              --arg version "$VERSION" \
-              --arg targetAbi "$TARGET_ABI" \
-              --arg checksum "$CHECKSUM" \
-              --arg sourceUrl "$SOURCE_URL" \
-              --arg timestamp "$TIMESTAMP" \
-              --arg changelog "Jellyfin ${JF} compatibility build; .NET 10." \
-              '.[0].versions = ([{
-                version: $version,
-                changelog: $changelog,
-                targetAbi: $targetAbi,
-                sourceUrl: $sourceUrl,
-                checksum: $checksum,
-                timestamp: $timestamp
-              }] + [.[0].versions[] | select(.version != $version)])' \
-              manifest.tmp > manifest.next
-            mv manifest.next manifest.tmp
-          done
-
-          mv manifest.tmp manifest.json
+          jq -n \
+            --arg checksum120 "$CHECKSUM_120" \
+            --arg checksum121 "$CHECKSUM_121" \
+            --arg timestamp "$TIMESTAMP" \
+            --arg owner "maestronix" \
+            --arg imageUrl "https://kinopoisk.userecho.com/s/attachments/28876/0/1/25f8c0315e6ccb2aa6c2642e48f2c9e9.png" \
+            '[{
+              category: "Metadata",
+              guid: "33e6d249-648f-44cd-a9ce-497be06c08df",
+              name: "КиноПоиск",
+              overview: "Информация о фильмах и сериалах с КиноПоиска",
+              owner: $owner,
+              description: "Загружает рейтинг, описания, актёров, трейлеры и другие метаданные с КиноПоиска. Для точного распознавания рекомендуется указывать id фильма в имени файла или папки в формате kp-12345 или kp12345.",
+              imageUrl: $imageUrl,
+              versions: [
+                {
+                  version: "13.0.0.0",
+                  changelog: "Jellyfin 12.0 compatibility; fixed Jellyfin 12 provider discovery and Identify handling; .NET 10.",
+                  targetAbi: "12.0.0.0",
+                  sourceUrl: "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v13.0.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.0.0.zip",
+                  checksum: $checksum120,
+                  timestamp: $timestamp
+                },
+                {
+                  version: "13.0.0.0",
+                  changelog: "Jellyfin 12.1 compatibility; fixed Jellyfin 12 provider discovery and Identify handling; .NET 10.",
+                  targetAbi: "12.1.0.0",
+                  sourceUrl: "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v13.0.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.1.0.zip",
+                  checksum: $checksum121,
+                  timestamp: $timestamp
+                }
+              ]
+            }]' > manifest.json
 
       - name: Commit manifest
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
-          git diff --cached --quiet || git commit -m "Publish Jellyfin 12 plugin manifest"
+          git diff --cached --quiet || git commit -m "Publish Kinopoisk 13.0.0.0 manifest"
           git push
