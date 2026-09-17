@@ -11,6 +11,13 @@ permissions:
   contents: write
   actions: read
 
+env:
+  PLUGIN_VERSION: 13.0.1.0
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Build Jellyfin ${{ matrix.jellyfin }}
@@ -41,7 +48,7 @@ jobs:
       - name: Package plugin
         run: |
           set -euo pipefail
-          VERSION="13.0.0.0"
+          VERSION="${PLUGIN_VERSION}"
           TARGET_ABI="${{ matrix.jellyfin }}.0"
           ZIP="jellyfin-plugin-kinopoisk_v${VERSION}_jf${{ matrix.jellyfin }}.zip"
 
@@ -60,8 +67,8 @@ jobs:
         with:
           name: release-${{ matrix.jellyfin }}
           path: |
-            jellyfin-plugin-kinopoisk_v13.0.0.0_jf${{ matrix.jellyfin }}.zip
-            jellyfin-plugin-kinopoisk_v13.0.0.0_jf${{ matrix.jellyfin }}.zip.md5
+            jellyfin-plugin-kinopoisk_v${{ env.PLUGIN_VERSION }}_jf${{ matrix.jellyfin }}.zip
+            jellyfin-plugin-kinopoisk_v${{ env.PLUGIN_VERSION }}_jf${{ matrix.jellyfin }}.zip.md5
           if-no-files-found: error
 
   publish:
@@ -92,25 +99,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="v13.0.0.0"
+          TAG="v${PLUGIN_VERSION}"
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" \
-              --title "КиноПоиск 13.0.0.0" \
-              --notes "Jellyfin 12.0 and 12.1 compatibility build. Plugin versioning is independent from the Jellyfin ABI version."
+              --title "КиноПоиск ${PLUGIN_VERSION}" \
+              --notes "Jellyfin 12.0 and 12.1 compatibility build. Adds Kinopoisk season and episode metadata. Plugin versioning is independent from the Jellyfin ABI version."
 
           gh release upload "$TAG" \
-            releases/12.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.0.0.zip \
-            releases/12.1.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.1.0.zip \
+            "releases/12.0.0/jellyfin-plugin-kinopoisk_v${PLUGIN_VERSION}_jf12.0.0.zip" \
+            "releases/12.1.0/jellyfin-plugin-kinopoisk_v${PLUGIN_VERSION}_jf12.1.0.zip" \
             --clobber
 
       - name: Replace repository manifest with current release only
         run: |
           set -euo pipefail
-          CHECKSUM_120=$(cat releases/12.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.0.0.zip.md5)
-          CHECKSUM_121=$(cat releases/12.1.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.1.0.zip.md5)
+          CHECKSUM_120=$(cat "releases/12.0.0/jellyfin-plugin-kinopoisk_v${PLUGIN_VERSION}_jf12.0.0.zip.md5")
+          CHECKSUM_121=$(cat "releases/12.1.0/jellyfin-plugin-kinopoisk_v${PLUGIN_VERSION}_jf12.1.0.zip.md5")
           TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
 
           jq -n \
+            --arg version "$PLUGIN_VERSION" \
             --arg checksum120 "$CHECKSUM_120" \
             --arg checksum121 "$CHECKSUM_121" \
             --arg timestamp "$TIMESTAMP" \
@@ -122,22 +130,22 @@ jobs:
               name: "КиноПоиск",
               overview: "Информация о фильмах и сериалах с КиноПоиска",
               owner: $owner,
-              description: "Загружает рейтинг, описания, актёров, трейлеры и другие метаданные с КиноПоиска. Для точного распознавания рекомендуется указывать id фильма в имени файла или папки в формате kp-12345 или kp12345.",
+              description: "Загружает рейтинг, описания, актёров, трейлеры und Staffeln/Folgen-Metadaten с КиноПоиска. Für точного распознавания рекомендуется указывать id фильма в имени файла или папки в формате kp-12345 или kp12345.",
               imageUrl: $imageUrl,
               versions: [
                 {
-                  version: "13.0.0.0",
-                  changelog: "Jellyfin 12.0 compatibility; fixed Jellyfin 12 provider discovery and Identify handling; .NET 10.",
+                  version: $version,
+                  changelog: "Jellyfin 12.0 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
                   targetAbi: "12.0.0.0",
-                  sourceUrl: "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v13.0.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.0.0.zip",
+                  sourceUrl: ("https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v" + $version + "/jellyfin-plugin-kinopoisk_v" + $version + "_jf12.0.0.zip"),
                   checksum: $checksum120,
                   timestamp: $timestamp
                 },
                 {
-                  version: "13.0.0.0",
-                  changelog: "Jellyfin 12.1 compatibility; fixed Jellyfin 12 provider discovery and Identify handling; .NET 10.",
+                  version: $version,
+                  changelog: "Jellyfin 12.1 compatibility; added Kinopoisk season and episode metadata; removed response caching; .NET 10.",
                   targetAbi: "12.1.0.0",
-                  sourceUrl: "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v13.0.0.0/jellyfin-plugin-kinopoisk_v13.0.0.0_jf12.1.0.zip",
+                  sourceUrl: ("https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v" + $version + "/jellyfin-plugin-kinopoisk_v" + $version + "_jf12.1.0.zip"),
                   checksum: $checksum121,
                   timestamp: $timestamp
                 }
@@ -149,5 +157,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
-          git diff --cached --quiet || git commit -m "Publish Kinopoisk 13.0.0.0 manifest"
+          git diff --cached --quiet || git commit -m "Publish Kinopoisk ${PLUGIN_VERSION} manifest"
           git push
