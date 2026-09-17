@@ -52,7 +52,7 @@ namespace Jellyfin.Plugin.Kinopoisk.MetadataProviders
                 return result;
             }
 
-            result.Item = new Season
+            result.Item = new MediaBrowser.Controller.Entities.TV.Season
             {
                 Name = info.Name,
                 IndexNumber = season.Number
