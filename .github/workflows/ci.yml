@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PLUGIN_VERSION: 13.0.1.0
+
 jobs:
   build:
     name: Build Jellyfin ${{ matrix.jellyfin }} plugin
@@ -47,7 +50,7 @@ jobs:
 
       - name: Package plugin
         run: |
-          VERSION="${{ matrix.jellyfin }}.0"
+          VERSION="${PLUGIN_VERSION}"
           TARGET_ABI="${{ matrix.jellyfin }}.0"
           mkdir -p release_package
           cp "src/Jellyfin.Plugin.Kinopoisk/bin/Release/net10.0/Jellyfin.Plugin.Kinopoisk.dll" release_package/
@@ -60,5 +63,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kinopoisk-${{ matrix.jellyfin }}
-          path: jellyfin-plugin-kinopoisk_v${{ matrix.jellyfin }}.0.zip
+          path: jellyfin-plugin-kinopoisk_v${{ matrix.jellyfin }}.zip
           if-no-files-found: error
