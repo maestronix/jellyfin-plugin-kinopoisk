@@ -1,34 +1,35 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NSwag.MSBuild" Version="13.18.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
 
-  <!-- <ItemGroup>
-    <OpenApiReference Include="..\api\swagger.json">
-      <CodeGenerator>NSwagCSharp</CodeGenerator>
-      <Link>OpenAPIs\swagger.json</Link>
-      <Namespace>ClientApi.Services</Namespace>
-      <ClassName>WeatherServiceClient</ClassName>
-      <OutputPath>WeatherServiceClient.cs</OutputPath>
-    </OpenApiReference>
-  </ItemGroup> -->
+  <!--
+    The generated client is committed to the repository. Regeneration is kept
+    opt-in so normal CI/release builds do not depend on the availability of the
+    upstream OpenAPI document.
+  -->
+  <PropertyGroup>
+    <GenerateKinopoiskApiClient Condition="'$(GenerateKinopoiskApiClient)' == ''">false</GenerateKinopoiskApiClient>
+  </PropertyGroup>
 
-  <Target Name="GenerateApiClientSourceCode">
+  <Target Name="GenerateApiClientSourceCode" Condition="'$(GenerateKinopoiskApiClient)' == 'true'">
     <Exec Command="$(NSwagExe_Net60) openapi2csclient /runtime:Net60 /input:https://kinopoiskapiunofficial.tech/documentation/api/openapi.json /namespace:KinopoiskUnofficialInfo.ApiClient /JsonSerializerSettingsTransformationMethod:KinopoiskUnofficialInfo.ApiClient.JsonTransformator.TransformSettings /output:GeneratedClient.generated.cs" />
     <ItemGroup>
       <Compile Include="GeneratedClient.generated.cs" />
     </ItemGroup>
   </Target>
+
 </Project>
