@@ -19,12 +19,12 @@ namespace KinopoiskUnofficialInfo.ApiClient
         {
             if (string.IsNullOrEmpty(apiToken))
             {
-                throw new System.ArgumentException($"'{nameof(apiToken)}' cannot be null or empty.", nameof(apiToken));
+                throw new ArgumentException($"'{nameof(apiToken)}' cannot be null or empty.", nameof(apiToken));
             }
 
             _apiToken = apiToken;
-            _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
-            _httpClientFactory = httpClientFactory ?? throw new System.ArgumentNullException(nameof(httpClientFactory));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
 
             var httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Add("X-API-KEY", _apiToken);
@@ -35,42 +35,46 @@ namespace KinopoiskUnofficialInfo.ApiClient
         {
             try
             {
-                _logger.LogDebug($"{memberName} request starting...");
-                var res = await method.Invoke(ct ?? CancellationToken.None);
-                _logger.LogDebug($"{memberName} request complete successfully");
+                _logger.LogDebug("{MemberName} request starting...", memberName);
+                var res = await method.Invoke(ct ?? CancellationToken.None).ConfigureAwait(false);
+                _logger.LogDebug("{MemberName} request complete successfully", memberName);
                 return res;
             }
             catch (ApiException e)
             {
-                _logger.LogError($"Received non-success result status code {e.StatusCode} from Kinopoisk API, response content is:\n{e.Response}");
+                _logger.LogError("Received non-success result status code {StatusCode} from Kinopoisk API, response content is:\n{Response}", e.StatusCode, e.Response);
                 throw;
             }
         }
 
         public Task<Film> GetSingleFilm(int filmId, CancellationToken? cancellationToken = null)
-            => Invoke((ct) => _apiClient.FilmsAsync(filmId, ct), cancellationToken);
+            => Invoke(ct => _apiClient.FilmsAsync(filmId, ct), cancellationToken);
 
         public Task<ICollection<StaffResponse>> GetStaff(int filmId, CancellationToken? cancellationToken = null)
-            => Invoke((ct) => _apiClient.StaffAllAsync(filmId, ct), cancellationToken);
+            => Invoke(ct => _apiClient.StaffAllAsync(filmId, ct), cancellationToken);
 
         public Task<FilmSearchResponse> SearchByKeyword(string keyword, int page = 1, CancellationToken? cancellationToken = null)
-            => Invoke((ct) => _apiClient.SearchByKeywordAsync(keyword, null, ct), cancellationToken);
+            => Invoke(ct => _apiClient.SearchByKeywordAsync(keyword, null, ct), cancellationToken);
 
         public Task<PersonResponse> GetPerson(int personId, CancellationToken? cancellationToken = null)
-            => Invoke((ct) => _apiClient.StaffAsync(personId, ct), cancellationToken);
+            => Invoke(ct => _apiClient.StaffAsync(personId, ct), cancellationToken);
 
         public Task<VideoResponse> GetTrailers(int filmId, CancellationToken? cancellationToken = null)
         {
-            return Invoke(async (ct) => {
-                try {
-                    return await _apiClient.VideosAsync(filmId, ct);
-                } catch (ApiException e)
+            return Invoke(async ct =>
+            {
+                try
                 {
-                    if (e.StatusCode == 404)
-                        return new VideoResponse();
-                    throw;
+                    return await _apiClient.VideosAsync(filmId, ct).ConfigureAwait(false);
+                }
+                catch (ApiException e) when (e.StatusCode == 404)
+                {
+                    return new VideoResponse();
                 }
             }, cancellationToken);
         }
+
+        public Task<SeasonResponse> GetSeasons(int filmId, CancellationToken? cancellationToken = null)
+            => Invoke(ct => _apiClient.SeasonsAsync(filmId, ct), cancellationToken);
     }
 }
