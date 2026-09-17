@@ -13,16 +13,16 @@
         "changelog": "Jellyfin 12.1.0 compatibility build; .NET 10.",
         "targetAbi": "12.1.0.0",
         "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v12.1.0.0/jellyfin-plugin-kinopoisk_v12.1.0.0.zip",
-        "checksum": "0C7010C9D25133A77F70D7942CD62184",
-        "timestamp": "2026-09-17T11:18:30Z"
+        "checksum": "5AAC2D4A5FCBF044D1C0F1A3A896744C",
+        "timestamp": "2026-09-17T13:22:46Z"
       },
       {
         "version": "12.0.0.0",
         "changelog": "Jellyfin 12.0.0 compatibility build; .NET 10.",
         "targetAbi": "12.0.0.0",
         "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v12.0.0.0/jellyfin-plugin-kinopoisk_v12.0.0.0.zip",
-        "checksum": "73650E30C3EE26FB6CF879E32C0D06B8",
-        "timestamp": "2026-09-17T11:18:30Z"
+        "checksum": "2FB8211FCDA9EB58036BAFD2BD5041C7",
+        "timestamp": "2026-09-17T13:22:46Z"
       }
     ]
   }
