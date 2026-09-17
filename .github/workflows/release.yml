@@ -1,0 +1,149 @@
+name: Build and Release Jellyfin 12 Plugin
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - manifest.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build:
+    name: Build Jellyfin ${{ matrix.jellyfin }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        jellyfin: [12.0.0, 12.1.0]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore src/Jellyfin.Plugin.Kinopoisk.sln -p:JellyfinVersion=${{ matrix.jellyfin }}
+
+      - name: Build plugin
+        run: dotnet build src/Jellyfin.Plugin.Kinopoisk/Jellyfin.Plugin.Kinopoisk.csproj --configuration Release --no-restore -p:JellyfinVersion=${{ matrix.jellyfin }}
+
+      - name: Run tests
+        run: dotnet test src/Jellyfin.Plugin.Kinopoisk.Tests/Jellyfin.Plugin.Kinopoisk.Tests.csproj --configuration Release --no-build -p:JellyfinVersion=${{ matrix.jellyfin }}
+
+      - name: Package plugin
+        run: |
+          VERSION="${{ matrix.jellyfin }}.0"
+          TARGET_ABI="${{ matrix.jellyfin }}.0"
+          ZIP="jellyfin-plugin-kinopoisk_v${VERSION}.zip"
+
+          mkdir -p release_package
+          cp "src/Jellyfin.Plugin.Kinopoisk/bin/Release/net10.0/Jellyfin.Plugin.Kinopoisk.dll" release_package/
+          cp "src/KinopoiskUnofficialInfo.ApiClient/bin/Release/net10.0/KinopoiskUnofficialInfo.ApiClient.dll" release_package/
+
+          jq --arg version "$VERSION" --arg targetAbi "$TARGET_ABI" \
+            '.version = $version | .targetAbi = $targetAbi' meta.json > release_package/meta.json
+
+          (cd release_package && zip -r "../$ZIP" .)
+          md5sum "$ZIP" | awk '{print toupper($1)}' > "$ZIP.md5"
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.jellyfin }}
+          path: |
+            jellyfin-plugin-kinopoisk_v${{ matrix.jellyfin }}.0.zip
+            jellyfin-plugin-kinopoisk_v${{ matrix.jellyfin }}.0.zip.md5
+          if-no-files-found: error
+
+  publish:
+    name: Publish releases and repository manifest
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Jellyfin 12.0 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-12.0.0
+          path: releases/12.0.0
+
+      - name: Download Jellyfin 12.1 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-12.1.0
+          path: releases/12.1.0
+
+      - name: Create GitHub releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for JF in 12.0.0 12.1.0; do
+            VERSION="${JF}.0"
+            ZIP="jellyfin-plugin-kinopoisk_v${VERSION}.zip"
+            TAG="v${VERSION}"
+
+            gh release view "$TAG" >/dev/null 2>&1 || \
+              gh release create "$TAG" \
+                --title "КиноПоиск Jellyfin ${VERSION}" \
+                --notes "Jellyfin ${JF} compatible build of the Kinopoisk metadata plugin."
+
+            gh release upload "$TAG" \
+              "releases/${JF}/${ZIP}" \
+              --clobber
+          done
+
+      - name: Update repository manifest
+        run: |
+          set -euo pipefail
+          cp manifest.json manifest.tmp
+
+          for JF in 12.0.0 12.1.0; do
+            VERSION="${JF}.0"
+            TARGET_ABI="${JF}.0"
+            ZIP="jellyfin-plugin-kinopoisk_v${VERSION}.zip"
+            CHECKSUM=$(cat "releases/${JF}/${ZIP}.md5")
+            SOURCE_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${ZIP}"
+            TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+            jq \
+              --arg version "$VERSION" \
+              --arg targetAbi "$TARGET_ABI" \
+              --arg checksum "$CHECKSUM" \
+              --arg sourceUrl "$SOURCE_URL" \
+              --arg timestamp "$TIMESTAMP" \
+              --arg changelog "Jellyfin ${JF} compatibility build; .NET 10." \
+              '.[0].versions = ([{
+                version: $version,
+                changelog: $changelog,
+                targetAbi: $targetAbi,
+                sourceUrl: $sourceUrl,
+                checksum: $checksum,
+                timestamp: $timestamp
+              }] + [.[0].versions[] | select(.version != $version)])' \
+              manifest.tmp > manifest.next
+            mv manifest.next manifest.tmp
+          done
+
+          mv manifest.tmp manifest.json
+
+      - name: Commit manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git diff --cached --quiet || git commit -m "Publish Jellyfin 12 plugin manifest"
+          git push
