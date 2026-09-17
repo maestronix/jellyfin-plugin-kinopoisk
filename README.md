@@ -1,32 +1,42 @@
 # jellyfin-plugin-kinopoisk
 
-Fetches metadata from https://www.kinopoisk.ru/. This site is popular in the Russian-speaking community and contains almost no English-language information, so further description will be in Russian.
+Jellyfin metadata provider for [КиноПоиск](https://www.kinopoisk.ru/).
 
-## Установка
+This fork is maintained for Jellyfin 12.x and currently publishes builds for:
 
-Администрирование - Панель - Расширенное - Плагины - вкладка Репозитории - добавить адрес https://raw.githubusercontent.com/LinFor/jellyfin-plugin-kinopoisk/master/dist/manifest.json.
+- Jellyfin 12.0
+- Jellyfin 12.1
+- .NET 10
 
-После этого на вкладке Каталог найти "КиноПоиск" (раздел Метаданные) и установить.
+## Install
 
-Альтернатива для Emby - [luzmane/emby.kinopoisk.ru](https://github.com/luzmane/emby.kinopoisk.ru)
+In Jellyfin go to **Dashboard → Plugins → Repositories** and add:
 
-## Настройка
+```text
+https://raw.githubusercontent.com/maestronix/jellyfin-plugin-kinopoisk/master/manifest.json
+```
 
-Параметры плагина искать в: Администрирование - Панель - Расширенное - Плагины - вкладка "Мои плагины" - КиноПоиск - "три точки" - Параметры
+Then install **КиноПоиск** from the Metadata category.
 
-Если плагин не работает или работает плохо - попробуйте зарегистрировать (и указать в параметрах) свой собственный ApiToken (на сайте https://kinopoiskapiunofficial.tech). По-умолчанию прописан общий, ограничение порядка 10 запросов/сек - для общего ApiToken быстро заканчивается.
+## Configuration
 
-## Использование
+Plugin settings are available under **Dashboard → Plugins → My Plugins → КиноПоиск → Settings**.
 
-Поддерживаются:
-- Фильмы
-- Сериалы
+The plugin can use an API token from `kinopoiskapiunofficial.tech`. A personal token is recommended for larger libraries because the shared token is rate-limited.
 
-На данный момент грузятся:
-- Рейтинг
-- Описание
-- Постеры и задники
-- Актёры
-- Трейлеры (только те, что лежат на ютубе - Jellyfin-Web не умеет играть трейлеры, лежащие на самом КиноПоиске)
+## Metadata
 
-Плагин будет пытаться найти в имени файла (для фильмов) или имени корневой папки (для сериалов) паттерн вида "kp-12345" или "kp12345", где число - id фильма на сайте КиноПоиск.
+The plugin supports movies and series and can fetch:
+
+- rating
+- descriptions
+- posters and backdrops
+- actors and staff
+- trailers available through YouTube
+- Kinopoиск IDs from `kp-12345` / `kp12345` in filenames or folder names
+
+## Builds
+
+GitHub Actions builds and tests the plugin against both Jellyfin 12.0 and 12.1. Each build is published as a GitHub Release and added to `manifest.json`, so Jellyfin can select the matching ABI automatically.
+
+The committed API client is used for normal builds. OpenAPI client regeneration is opt-in with `GenerateKinopoiskApiClient=true`.
