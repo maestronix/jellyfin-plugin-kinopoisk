@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using KinopoiskUnofficialInfo.ApiClient;
@@ -14,24 +15,24 @@ namespace Jellyfin.Plugin.Kinopoisk.MetadataProviders
     /// <summary>
     /// Provides season metadata from the Kinopoisk series seasons endpoint.
     /// </summary>
-    public sealed class SeasonMetadataProvider : IRemoteMetadataProvider<Season, SeasonInfo>
+    public sealed class SeasonMetadataProvider : BaseMetadataProvider, IRemoteMetadataProvider<MediaBrowser.Controller.Entities.TV.Season, SeasonInfo>
     {
         private readonly IKinopoiskApiClient _apiClient;
         private readonly ILogger<SeasonMetadataProvider> _logger;
 
         public SeasonMetadataProvider(
             IKinopoiskApiClient apiClient,
-            ILogger<SeasonMetadataProvider> logger)
+            ILogger<SeasonMetadataProvider> logger,
+            IHttpClientFactory httpClientFactory)
+            : base(httpClientFactory)
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public string Name => Constants.ProviderName;
-
-        public async Task<MetadataResult<Season>> GetMetadata(SeasonInfo info, CancellationToken cancellationToken)
+        public async Task<MetadataResult<MediaBrowser.Controller.Entities.TV.Season>> GetMetadata(SeasonInfo info, CancellationToken cancellationToken)
         {
-            var result = new MetadataResult<Season>
+            var result = new MetadataResult<MediaBrowser.Controller.Entities.TV.Season>
             {
                 QueriedById = true,
                 Provider = Constants.ProviderName,
