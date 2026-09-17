@@ -26,31 +26,38 @@ namespace Jellyfin.Plugin.Kinopoisk.MetadataProviders
             _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
         }
 
+        public string Name => Constants.ProviderName;
+
         public async Task<MetadataResult<Person>> GetMetadata(PersonLookupInfo info, CancellationToken cancellationToken)
         {
-            var result = new MetadataResult<Person>()
+            var result = new MetadataResult<Person>
             {
                 QueriedById = true,
                 Provider = Constants.ProviderName,
                 ResultLanguage = Constants.ProviderMetadataLanguage
             };
 
-            var (resolveResult, kinopoiskId) = await _providerIdResolver.TryResolve(info, cancellationToken);
+            var (resolveResult, kinopoiskId) = await _providerIdResolver.TryResolve(info, cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug("[GetMetadata] Person provider ID resolved: {Resolved}, KinopoiskId: {KinopoiskId}, Name: {Name}", resolveResult, kinopoiskId, info.Name);
+
             if (!resolveResult)
+            {
                 return result;
+            }
 
-            var person = await _apiClient.GetPerson(kinopoiskId, cancellationToken);
-
+            var person = await _apiClient.GetPerson(kinopoiskId, cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
 
             result.Item = person.ToPerson();
             if (result.Item != null)
+            {
                 result.HasMetadata = true;
+            }
 
             return result;
         }
 
         public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(PersonLookupInfo searchInfo, CancellationToken cancellationToken)
-            => Task.FromResult(Enumerable.Empty<RemoteSearchResult>()); // Not supported
+            => Task.FromResult(Enumerable.Empty<RemoteSearchResult>());
     }
 }
