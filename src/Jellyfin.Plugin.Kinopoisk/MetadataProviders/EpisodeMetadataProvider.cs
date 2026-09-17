@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.Kinopoisk.MetadataProviders
     /// <summary>
     /// Provides episode metadata from the Kinopoisk series seasons endpoint.
     /// </summary>
-    public sealed class EpisodeMetadataProvider : IRemoteMetadataProvider<Episode, EpisodeInfo>
+    public sealed class EpisodeMetadataProvider : IRemoteMetadataProvider<MediaBrowser.Controller.Entities.TV.Episode, EpisodeInfo>
     {
         private readonly IKinopoiskApiClient _apiClient;
         private readonly ILogger<EpisodeMetadataProvider> _logger;
@@ -30,9 +30,9 @@ namespace Jellyfin.Plugin.Kinopoisk.MetadataProviders
 
         public string Name => Constants.ProviderName;
 
-        public async Task<MetadataResult<Episode>> GetMetadata(EpisodeInfo info, CancellationToken cancellationToken)
+        public async Task<MetadataResult<MediaBrowser.Controller.Entities.TV.Episode>> GetMetadata(EpisodeInfo info, CancellationToken cancellationToken)
         {
-            var result = new MetadataResult<Episode>
+            var result = new MetadataResult<MediaBrowser.Controller.Entities.TV.Episode>
             {
                 QueriedById = true,
                 Provider = Constants.ProviderName,
@@ -50,7 +50,7 @@ namespace Jellyfin.Plugin.Kinopoisk.MetadataProviders
             var response = await _apiClient.GetSeasons(seriesId, cancellationToken).ConfigureAwait(false);
             var episode = response?.Items?
                 .Where(s => s.Number == info.ParentIndexNumber.Value)
-                .SelectMany(s => s.Episodes ?? Array.Empty<Episode>())
+                .SelectMany(s => s.Episodes ?? Array.Empty<KinopoiskUnofficialInfo.ApiClient.Episode>())
                 .FirstOrDefault(e => e.SeasonNumber == info.ParentIndexNumber.Value && e.EpisodeNumber == info.IndexNumber.Value);
 
             if (episode is null)
@@ -67,7 +67,7 @@ namespace Jellyfin.Plugin.Kinopoisk.MetadataProviders
                 ? episode.NameRu
                 : episode.NameEn;
 
-            var item = new Episode
+            var item = new MediaBrowser.Controller.Entities.TV.Episode
             {
                 Name = string.IsNullOrWhiteSpace(name) ? info.Name : name,
                 OriginalTitle = !string.IsNullOrWhiteSpace(episode.NameEn) && !string.Equals(episode.NameEn, name, StringComparison.OrdinalIgnoreCase)
