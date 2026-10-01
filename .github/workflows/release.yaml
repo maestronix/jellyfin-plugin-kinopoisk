@@ -108,7 +108,7 @@ jobs:
           echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Build project
-        run: dotnet build ./src --configuration Release --property:Version="$VERSION"
+        run: dotnet build ./src/Jellyfin.Plugin.Kinopoisk/Jellyfin.Plugin.Kinopoisk.csproj --configuration Release --property:Version="$VERSION"
 
       - name: Package release archive
         run: |
