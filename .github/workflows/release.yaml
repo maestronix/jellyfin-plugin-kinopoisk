@@ -1,17 +1,23 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: "Версия (по умолчанию берётся из верхнего заголовка CHANGELOG.md)"
+        description: "Version, e.g. 1.0.0"
         required: false
         type: string
       allow_overwrite:
-        description: "Перезаписать релиз, если такая версия уже выпущена (не для опубликованных версий)"
+        description: "Allow replacing an unpublished/broken release"
         required: false
         default: false
         type: boolean
+
+permissions:
+  contents: write
 
 env:
   DIST_ARCHIVES_PATH: dist/kinopoisk
@@ -19,185 +25,156 @@ env:
   TARGET_ABI: 12.0.0.0
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-    - name: Setup .NET 10.0
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: 10.0.x
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Determine version
-      id: version
-      run: |
-        VERSION=""
-        if [ -n "${{ github.event.inputs.version }}" ]; then
-          VERSION="${{ github.event.inputs.version }}"
-        elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-          VERSION="${GITHUB_REF#refs/tags/v}"
-        else
-          # Пытаемся получить версию из CHANGELOG.md
-          if [ -f CHANGELOG.md ]; then
-            CHANGELOG_VERSION=$(grep -E '^## \[' CHANGELOG.md | grep -v '## \[Unreleased\]' | head -1 | sed -E 's/^## \[v?([^]]+)\].*/\1/')
-            if [ -n "$CHANGELOG_VERSION" ]; then
-              VERSION=$CHANGELOG_VERSION
-            fi
-          fi
-          # Если не нашли версию в CHANGELOG.md, пробуем git
-          if [ -z "$VERSION" ]; then
-            GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-            if [ -n "$GIT_TAG" ]; then
-              VERSION="${GIT_TAG#v}"
-            fi
-          fi
-        fi
-
-        if [ -z "$VERSION" ]; then
-          echo "Не удалось определить версию. Укажите версию вручную или создайте тег."
-          exit 1
-        fi
-
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-    - name: Refuse to re-release an existing version
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        # A .NET build is not reproducible, so rebuilding the same source produces a different
-        # archive and a different checksum. Replacing the asset of a published version therefore
-        # invalidates the checksum for everyone who installed it before. Bump the version instead.
-        if gh release view "v${VERSION}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-          if [ "${{ inputs.allow_overwrite }}" = "true" ]; then
-            echo "::warning::Релиз v${VERSION} уже существует и будет перезаписан"
+      - name: Determine version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            echo "::error::Релиз v${VERSION} уже выпущен. Добавьте новую версию в CHANGELOG.md," \
-                 "либо перезапустите с allow_overwrite, если предыдущий запуск не дошёл до публикации."
+            VERSION="$(grep -E '^## \\[v?[^]]+\\]' CHANGELOG.md | head -1 | sed -E 's/^## \\[v?([^]]+)\\].*/\\1/')"
+          fi
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not determine a release version."
             exit 1
           fi
-        fi
 
-    - name: Extract changelog
-      id: changelog
-      run: |
-        if [ -f CHANGELOG.md ]; then
-          # Ищем номер строки с нашей версией
-          LINE_NUM=$(grep -n "## \\[${{ env.VERSION }}\\]" CHANGELOG.md | cut -d: -f1)
-          
-          if [ -n "$LINE_NUM" ]; then
-            # Извлекаем контент от следующей строки до следующего заголовка ## [
-            NEXT_HEADER_LINE=$(tail -n +$((LINE_NUM+1)) CHANGELOG.md | grep -n "## \\[" | head -1 | cut -d: -f1)
-            
-            if [ -n "$NEXT_HEADER_LINE" ]; then
-              # Есть следующий заголовок - извлекаем до него
-              CHANGELOG=$(tail -n +$((LINE_NUM+1)) CHANGELOG.md | head -n $((NEXT_HEADER_LINE-1)))
+          if ! [[ "$VERSION" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+            echo "::error::Version '$VERSION' is not valid semver X.Y.Z."
+            exit 1
+          fi
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ "$TAG_VERSION" != "$VERSION" ]; then
+            echo "::error::Tag version $TAG_VERSION does not match release version $VERSION."
+            exit 1
+          fi
+
+      - name: Refuse to re-release an existing version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${VERSION}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            if [ "${{ inputs.allow_overwrite }}" = "true" ]; then
+              echo "::warning::Release v${VERSION} already exists and will be replaced."
             else
-              # Нет следующего заголовка - извлекаем до конца файла
-              CHANGELOG=$(tail -n +$((LINE_NUM+1)) CHANGELOG.md)
+              echo "::error::Release v${VERSION} already exists. Bump the plugin version instead."
+              exit 1
             fi
-            
-            # Удаляем пустые строки в начале и конце
-            CHANGELOG=$(echo "$CHANGELOG" | sed -e '1s/^[[:space:]]*//' -e '/./,$!d' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')
-            
-            # Если остались только пустые строки
-            if [ -z "$(echo "$CHANGELOG" | tr -d '[:space:]')" ]; then
-              CHANGELOG="New release"
+          fi
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          LINE_NUM=$(grep -n -E "^## \\[v?${VERSION}\\]" CHANGELOG.md | head -1 | cut -d: -f1)
+
+          if [ -n "$LINE_NUM" ]; then
+            NEXT_HEADER_LINE=$(tail -n +$((LINE_NUM + 1)) CHANGELOG.md | grep -n -E "^## \\[" | head -1 | cut -d: -f1)
+            if [ -n "$NEXT_HEADER_LINE" ]; then
+              CHANGELOG=$(tail -n +$((LINE_NUM + 1)) CHANGELOG.md | head -n $((NEXT_HEADER_LINE - 1)))
+            else
+              CHANGELOG=$(tail -n +$((LINE_NUM + 1)) CHANGELOG.md)
             fi
           else
             CHANGELOG="New release"
           fi
-        else
-          CHANGELOG="New release"
-        fi
-        
-        echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        echo "$CHANGELOG" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
 
-    - name: Build project
-      run: dotnet build --configuration Release --property:Version=${VERSION} ./src
+          echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
-    - name: Package release archive
-      run: |
-        RELEASE_FILENAME=jellyfin-plugin-kinopoisk_${VERSION}.zip
-        RELEASE_FILE=${DIST_ARCHIVES_PATH}/${RELEASE_FILENAME}
-        mkdir -p ${DIST_ARCHIVES_PATH}
-        zip --junk-paths $RELEASE_FILE \
-          ./src/Jellyfin.Plugin.Kinopoisk/bin/Release/net10.0/Jellyfin.Plugin.Kinopoisk.dll \
-          ./src/KinopoiskUnofficialInfo.ApiClient/bin/Release/net10.0/KinopoiskUnofficialInfo.ApiClient.dll
-        echo "RELEASE_FILENAME=$RELEASE_FILENAME" >> $GITHUB_ENV
-        echo "RELEASE_FILE=$RELEASE_FILE" >> $GITHUB_ENV
+      - name: Build project
+        run: dotnet build ./src --configuration Release --property:Version="$VERSION"
 
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v3
-      with:
-        tag_name: v${{ env.VERSION }}
-        body: ${{ steps.changelog.outputs.changelog }}
-        files: |
-          ${{ env.RELEASE_FILE }}
+      - name: Package release archive
+        run: |
+          RELEASE_FILENAME="jellyfin-plugin-kinopoisk_${VERSION}.zip"
+          RELEASE_FILE="${DIST_ARCHIVES_PATH}/${RELEASE_FILENAME}"
+          mkdir -p "${DIST_ARCHIVES_PATH}"
 
-    - name: Hashsum calculation
-      id: hashsum
-      run: |
-        HASH=$(md5sum "${DIST_ARCHIVES_PATH}/jellyfin-plugin-kinopoisk_${VERSION}.zip" | cut -d' ' -f1)
-        echo "HASH=$HASH" >> $GITHUB_ENV
-        echo "hash=$HASH" >> $GITHUB_OUTPUT
+          zip --junk-paths "${RELEASE_FILE}" \
+            ./src/Jellyfin.Plugin.Kinopoisk/bin/Release/net10.0/Jellyfin.Plugin.Kinopoisk.dll \
+            ./src/KinopoiskUnofficialInfo.ApiClient/bin/Release/net10.0/KinopoiskUnofficialInfo.ApiClient.dll
 
-    - name: Update manifest
-      id: update_manifest
-      run: |
-        CHANGELOG_JSON=$(echo -n "${{ steps.changelog.outputs.changelog }}" | jq -Rs .)
-        # SOURCE_URL="${{ fromJSON(steps.create_release.outputs.assets)[0].browser_download_url }}" # Не работает, отдаёт временный урл
-        SOURCE_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/v${{ env.VERSION }}/${{ env.RELEASE_FILENAME }}"
+          echo "RELEASE_FILENAME=$RELEASE_FILENAME" >> "$GITHUB_ENV"
+          echo "RELEASE_FILE=$RELEASE_FILE" >> "$GITHUB_ENV"
 
-        jq --arg VERSION "${{ env.VERSION }}" \
-           --arg HASH "${{ env.HASH }}" \
-           --argjson CHANGELOG "$CHANGELOG_JSON" \
-           --arg TARGET_ABI "${{ env.TARGET_ABI }}" \
-           --arg TIMESTAMP "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
-           --arg SOURCE_URL "$SOURCE_URL" \
-           '.[0].versions = [
-             {
-               "version": $VERSION,
-               "checksum": $HASH,
-               "changelog": $CHANGELOG,
-               "targetAbi": $TARGET_ABI,
-               "sourceUrl": $SOURCE_URL,
-               "timestamp": $TIMESTAMP
-             }
-           ] + (.[0].versions | map(select(.version != $VERSION)))' \
-           "${MANIFEST_FILE}" > "${MANIFEST_FILE}.tmp"
+      - name: Calculate checksum
+        id: checksum
+        run: |
+          HASH=$(md5sum "$RELEASE_FILE" | cut -d' ' -f1)
+          echo "HASH=$HASH" >> "$GITHUB_ENV"
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
 
-        mv "${MANIFEST_FILE}.tmp" "${MANIFEST_FILE}"
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ env.VERSION }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          files: ${{ env.RELEASE_FILE }}
 
+      - name: Update plugin manifest
+        run: |
+          CHANGELOG_JSON=$(echo -n "${{ steps.changelog.outputs.changelog }}" | jq -Rs .)
+          SOURCE_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/v${VERSION}/${RELEASE_FILENAME}"
 
-    - name: Commit and push changes
-      run: |
-        # Настраиваем git
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git config user.name "github-actions[bot]"
-        
-        # Получаем имя текущей ветки
-        CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
-        echo "Текущая ветка: $CURRENT_BRANCH"
-        
-        # Проверяем, есть ли изменения в манифесте или архиве
-        if git diff --quiet HEAD -- "${MANIFEST_FILE}"; then
-          echo "ℹ️ Нет изменений для коммита"
-        else
-          # Добавляем измененные файлы
-          git add "${MANIFEST_FILE}"
-          
-          # Создаем коммит с [skip ci], чтобы не запускать workflow снова
-          git commit -m "Added to manifest version ${{ env.VERSION }} [skip ci]"
-          echo "✅ Изменения закоммичены"
-          
-          # Пушим изменения в текущую ветку
-          git push origin HEAD:$CURRENT_BRANCH
-          echo "✅ Изменения запущены в ветку $CURRENT_BRANCH"
-        fi
+          jq --arg version "$VERSION" \
+             --arg checksum "$HASH" \
+             --argjson changelog "$CHANGELOG_JSON" \
+             --arg targetAbi "$TARGET_ABI" \
+             --arg timestamp "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+             --arg sourceUrl "$SOURCE_URL" \
+             '.[0].versions = [
+               {
+                 "version": $version,
+                 "checksum": $checksum,
+                 "changelog": $changelog,
+                 "targetAbi": $targetAbi,
+                 "sourceUrl": $sourceUrl,
+                 "timestamp": $timestamp
+               }
+             ] + (.[0].versions | map(select(.version != $version)))' \
+             "$MANIFEST_FILE" > "$MANIFEST_FILE.tmp"
+
+          mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
+
+      - name: Commit manifest
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          git fetch origin master
+          git checkout master
+
+          git add "$MANIFEST_FILE"
+          if git diff --cached --quiet; then
+            echo "No manifest changes."
+            exit 0
+          fi
+
+          git commit -m "Update plugin manifest for v${VERSION} [skip ci]"
+          git push origin master
