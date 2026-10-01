@@ -3,12 +3,14 @@
 Плагин метаданных для Jellyfin, забирает информацию о фильмах и сериалах с [КиноПоиска](https://www.kinopoisk.ru/)
 через [kinopoiskapiunofficial.tech](https://kinopoiskapiunofficial.tech).
 
-Форк [LinFor/jellyfin-plugin-kinopoisk](https://github.com/LinFor/jellyfin-plugin-kinopoisk).
+Fork von [STL1te/jellyfin-plugin-kinopoisk](https://github.com/STL1te/jellyfin-plugin-kinopoisk), angepasst für Jellyfin 12.
+
+Dieser Fork **registriert КиноПоиск nicht als globalen Search Provider**. Die Kinopoisk-Metadatenfunktion und Identify-Suche bleiben erhalten.
 
 ## Установка
 
 Администрирование - Панель - Расширенное - Плагины - вкладка Репозитории - добавить адрес
-https://raw.githubusercontent.com/STL1te/jellyfin-plugin-kinopoisk/master/dist/manifest.json
+https://raw.githubusercontent.com/maestronix/jellyfin-plugin-kinopoisk/master/dist/manifest.json
 
 После этого на вкладке Каталог найти "КиноПоиск" (раздел Метаданные) и установить.
 
