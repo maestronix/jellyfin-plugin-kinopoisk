@@ -52,6 +52,10 @@ jobs:
             VERSION="$(grep -E '^## \\[v?[^]]+\\]' CHANGELOG.md | head -1 | sed -E 's/^## \\[v?([^]]+)\\].*/\\1/')"
           fi
 
+          # Normalize accidental whitespace/punctuation from manual workflow input.
+          VERSION="$(printf '%s' "$VERSION" | xargs)"
+          VERSION="${VERSION%.}"
+
           if [ -z "$VERSION" ]; then
             echo "::error::Could not determine a release version."
             exit 1
