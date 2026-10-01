@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.0]
+
+Eigenständige Jellyfin-12-Version dieses Forks.
+
+- Entfernt den `IExternalSearchProvider`, damit KиноПоиск nicht mehr bei der globalen Jellyfin-Suche abgefragt wird.
+- Die normale Kinopoisk-Metadatensuche/Identify-Funktion bleibt erhalten.
+- Plugin-Versionierung ist unabhängig von der Jellyfin-Serverversion.
+
 ## [12.0.1.0]
 
 Техническая пересборка плагина.
