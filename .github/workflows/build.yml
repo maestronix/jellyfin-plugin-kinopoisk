@@ -29,6 +29,18 @@ jobs:
       - name: Build
         run: dotnet build ./src/Jellyfin.Plugin.Kinopoisk/Jellyfin.Plugin.Kinopoisk.csproj --configuration Release --no-restore -p:Version=1.0.0
 
+      - name: Verify fork changes
+        run: |
+          if grep -R --line-number "IExternalSearchProvider" ./src/Jellyfin.Plugin.Kinopoisk --include='*.cs'; then
+            echo "::error::Kinopoisk must not register a global Jellyfin search provider."
+            exit 1
+          fi
+
+          if grep -nE 'STL1te|LinFor' ./dist/manifest.json; then
+            echo "::error::Plugin manifest still references the upstream repository."
+            exit 1
+          fi
+
       - name: Package
         run: |
           mkdir -p artifacts
