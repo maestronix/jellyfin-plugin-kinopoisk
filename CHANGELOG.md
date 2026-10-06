@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0]
+
+Jellyfin 12.2-Kompatibilität.
+
+- Jellyfin-NuGet-Pakete auf 12.2.0 aktualisiert.
+- Plugin-ABI auf 12.2.0.0 aktualisiert.
+
+
 ## [1.0.0]
 
 Eigenständige Jellyfin-12-Version dieses Forks.
