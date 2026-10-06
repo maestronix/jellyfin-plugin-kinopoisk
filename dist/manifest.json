@@ -9,6 +9,14 @@
     "imageUrl": "https://kinopoisk.userecho.com/s/attachments/28876/0/1/25f8c0315e6ccb2aa6c2642e48f2c9e9.png",
     "versions": [
       {
+        "version": "1.1.0",
+        "checksum": "",
+        "changelog": "Jellyfin 12.2-Kompatibilität.\n\n- Jellyfin-NuGet-Pakete auf 12.2.0 aktualisiert.\n- Plugin-ABI auf 12.2.0.0 aktualisiert.",
+        "targetAbi": "12.2.0.0",
+        "sourceUrl": "https://github.com/maestronix/jellyfin-plugin-kinopoisk/releases/download/v1.1.0/jellyfin-plugin-kinopoisk_1.1.0.zip",
+        "timestamp": ""
+      },
+      {
         "version": "1.0.0",
         "checksum": "974a22242a8a18b43593571fb5fa3d72",
         "changelog": "\nEigenständige Jellyfin-12-Version dieses Forks.\n\n- Entfernt den , damit KиноПоиск nicht mehr bei der globalen Jellyfin-Suche abgefragt wird.\n- Die normale Kinopoisk-Metadatensuche/Identify-Funktion bleibt erhalten.\n- Plugin-Versionierung ist unabhängig von der Jellyfin-Serverversion.",
