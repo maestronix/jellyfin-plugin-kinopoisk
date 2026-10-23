@@ -2,7 +2,7 @@
 
 ## [1.2.0]
 
-Jellyfin 12.3-Kompatibilität. Release wird bei Aktualisierung dieses Changelogs automatisch erstellt und im Plugin-Manifest registriert.
+Jellyfin 12.3-Kompatibilität. Release-Artefakt und Plugin-Manifest werden automatisch veröffentlicht.
 
 - Jellyfin-NuGet-Pakete auf 12.3.0 aktualisiert.
 - Plugin-ABI auf 12.3.0.0 aktualisiert.
