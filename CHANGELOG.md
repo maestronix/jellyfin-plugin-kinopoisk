@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0]
+
+Jellyfin 12.3-Kompatibilität.
+
+- Jellyfin-NuGet-Pakete auf 12.3.0 aktualisiert.
+- Plugin-ABI auf 12.3.0.0 aktualisiert.
+
 ## [1.1.0]
 
 Jellyfin 12.2-Kompatibilität.
