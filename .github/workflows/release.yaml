@@ -51,7 +51,7 @@ jobs:
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            VERSION="$(grep -E '^## \\[v?[^]]+\\]' CHANGELOG.md | head -1 | sed -E 's/^## \\[v?([^]]+)\\].*/\\1/')"
+            VERSION="$(sed -nE 's/^## \[v?([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/p' CHANGELOG.md | head -1)"
           fi
 
           # Normalize accidental whitespace/punctuation from manual workflow input.
@@ -96,10 +96,10 @@ jobs:
       - name: Extract changelog
         id: changelog
         run: |
-          LINE_NUM=$(grep -n -E "^## \\[v?${VERSION}\\]" CHANGELOG.md | head -1 | cut -d: -f1)
+          LINE_NUM=$(grep -n -F "## [${VERSION}]" CHANGELOG.md | head -1 | cut -d: -f1)
 
           if [ -n "$LINE_NUM" ]; then
-            NEXT_HEADER_LINE=$(tail -n +$((LINE_NUM + 1)) CHANGELOG.md | grep -n -E "^## \\[" | head -1 | cut -d: -f1)
+            NEXT_HEADER_LINE=$(tail -n +$((LINE_NUM + 1)) CHANGELOG.md | grep -n -F "## [" | head -1 | cut -d: -f1)
             if [ -n "$NEXT_HEADER_LINE" ]; then
               CHANGELOG=$(tail -n +$((LINE_NUM + 1)) CHANGELOG.md | head -n $((NEXT_HEADER_LINE - 1)))
             else
