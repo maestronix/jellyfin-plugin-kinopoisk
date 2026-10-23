@@ -2,6 +2,9 @@ name: Release
 
 on:
   push:
+    branches: [master]
+    paths:
+      - "CHANGELOG.md"
     tags:
       - "v*"
   workflow_dispatch:
