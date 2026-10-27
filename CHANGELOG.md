@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0]
+
+Jellyfin 12.4-Kompatibilität.
+
+- Jellyfin-NuGet-Pakete auf 12.4.0 aktualisiert.
+- Plugin-ABI auf 12.4.0.0 aktualisiert.
+- Keine Änderungen an Provider-Schnittstellen erforderlich; Release Notes für Jellyfin 12.4 nennen ein .NET-10-Patchupdate.
+
 ## [1.2.0]
 
 Jellyfin 12.3-Kompatibilität. Release-Artefakt und Plugin-Manifest werden automatisch veröffentlicht.
@@ -112,10 +120,6 @@ Results parsing fixes due to upstream service changes
 ## [10.7.5.1]
 
 Results parsing fixes
-
-## [10.7.5.0]
-
-Short: Huge improvement in auto-identifying of movies. Rus: Значительно улучшено авто-привязка фильмов при добавлении в медиатеку. Пытаюсь найти идентификатор кинопоиска по паттерну kp-12345 или kp12345 в имени файла/папки. Пытаюсь найти единственное совпадение на кинопоиске по имени + году. Пытаюсь перебрать все совпадения по имени + сравнение IMDB ID.
 
 ## [10.7.0.5]
 
