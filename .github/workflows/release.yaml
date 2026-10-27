@@ -10,7 +10,7 @@ on:
       version:
         description: "Version, e.g. 1.0.0"
         required: false
-        default: "1.2.0"
+        default: "1.3.0"
         type: string
       allow_overwrite:
         description: "Allow replacing an unpublished/broken release"
@@ -24,7 +24,7 @@ permissions:
 env:
   DIST_ARCHIVES_PATH: dist/kinopoisk
   MANIFEST_FILE: dist/manifest.json
-  TARGET_ABI: 12.3.0.0
+  TARGET_ABI: 12.4.0.0
 
 jobs:
   release:
@@ -54,7 +54,6 @@ jobs:
             VERSION="$(sed -nE 's/^## \[v?([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/p' CHANGELOG.md | head -1)"
           fi
 
-          # Normalize accidental whitespace/punctuation from manual workflow input.
           VERSION="$(printf '%s' "$VERSION" | xargs)"
           VERSION="${VERSION%.}"
 
@@ -122,9 +121,7 @@ jobs:
           RELEASE_FILE="${DIST_ARCHIVES_PATH}/${RELEASE_FILENAME}"
           mkdir -p "${DIST_ARCHIVES_PATH}"
 
-          zip --junk-paths "${RELEASE_FILE}" \
-            ./src/Jellyfin.Plugin.Kinopoisk/bin/Release/net10.0/Jellyfin.Plugin.Kinopoisk.dll \
-            ./src/KinopoiskUnofficialInfo.ApiClient/bin/Release/net10.0/KinopoiskUnofficialInfo.ApiClient.dll
+          zip --junk-paths "${RELEASE_FILE}"             ./src/Jellyfin.Plugin.Kinopoisk/bin/Release/net10.0/Jellyfin.Plugin.Kinopoisk.dll             ./src/KinopoiskUnofficialInfo.ApiClient/bin/Release/net10.0/KinopoiskUnofficialInfo.ApiClient.dll
 
           echo "RELEASE_FILENAME=$RELEASE_FILENAME" >> "$GITHUB_ENV"
           echo "RELEASE_FILE=$RELEASE_FILE" >> "$GITHUB_ENV"
@@ -148,13 +145,7 @@ jobs:
           CHANGELOG_JSON=$(echo -n "${{ steps.changelog.outputs.changelog }}" | jq -Rs .)
           SOURCE_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/v${VERSION}/${RELEASE_FILENAME}"
 
-          jq --arg version "$VERSION" \
-             --arg checksum "$HASH" \
-             --argjson changelog "$CHANGELOG_JSON" \
-             --arg targetAbi "$TARGET_ABI" \
-             --arg timestamp "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
-             --arg sourceUrl "$SOURCE_URL" \
-             '.[0].versions = [
+          jq --arg version "$VERSION"              --arg checksum "$HASH"              --argjson changelog "$CHANGELOG_JSON"              --arg targetAbi "$TARGET_ABI"              --arg timestamp "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"              --arg sourceUrl "$SOURCE_URL"              '.[0].versions = [
                {
                  "version": $version,
                  "checksum": $checksum,
@@ -163,8 +154,7 @@ jobs:
                  "sourceUrl": $sourceUrl,
                  "timestamp": $timestamp
                }
-             ] + (.[0].versions | map(select(.version != $version)))' \
-             "$MANIFEST_FILE" > "$MANIFEST_FILE.tmp"
+             ] + (.[0].versions | map(select(.version != $version)))'              "$MANIFEST_FILE" > "$MANIFEST_FILE.tmp"
 
           mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
 
